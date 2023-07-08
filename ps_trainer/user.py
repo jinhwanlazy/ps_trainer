@@ -1,8 +1,7 @@
 import pandas as pd
 
-from .config import Config
-from .db import HistoryDB, ProblemDB
 from .rating import ELO
+from .config import save_config
 from collections import defaultdict
 
 class User:
@@ -15,8 +14,6 @@ class User:
         self.__update([solved], [problem])
 
     def initialize(self, pdb, hdb):
-        config = Config()
-
         pids_seen = set()
         pids, outcomes = [], []
         prev = None
@@ -64,14 +61,15 @@ def assert_valid_username(name):
     assert len(name) > 0, f"invalid username - {name}"
 
 
-def get_current_user(config):
-    if 'current_user' in config:
-        username = config['current_user']
-        return User(username)
+def get_current_user(cfg):
+    if cfg.USERNAME:
+        return User(cfg.USERNAME)
 
     new_username = input('enter your codeforces handle: ')
     assert_valid_username(new_username)
-    config['current_user'] = new_username
+
+    cfg.USERNAME = new_username
+    save_config()
     return User(new_username)
 
 

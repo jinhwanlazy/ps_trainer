@@ -5,18 +5,17 @@ logger = logging.getLogger(__name__)
 
 from .user import get_current_user
 from .db import ProblemDB, HistoryDB, SubmissionDB
-from .config import Config
+from .config import cfg
 from .utils import read_confirm
 from . import trainer
 from . import __logdir__, __datadir__
 
 def start():
     logger.debug('start() called')
-    config = Config()
     hdb = HistoryDB()
     pdb = ProblemDB()
     sdb = SubmissionDB()
-    user = get_current_user(config)
+    user = get_current_user(cfg)
     user.initialize(pdb, hdb)
     sdb.update(user.name)
 
@@ -24,7 +23,7 @@ def start():
     remaining_time = 0
     if last is not None:
         logger.info(f'unfinished problem exist - {last.pid}')
-        remaining_time = config.time_limit - (datetime.now() - last.timestamp).seconds
+        remaining_time = cfg.TIME_LIMIT - (datetime.now() - last.timestamp).seconds
         if remaining_time <= 0:
             logger.info('unfinished problem marked as timeout')
             hdb.add_action(user.name, last.pid, 'timeout')
@@ -36,13 +35,14 @@ def start():
         problem = pdb.get_problem(last.pid)
         message = 'Resumed from your last session'
     else:
-        remaining_time = config.time_limit
+        remaining_time = cfg.TIME_LIMIT
         problem = trainer.select_problem(user, pdb, sdb)
         logger.info(f'selected new problem - {problem.pid}')
         message = ''
         hdb.add_action(user.name, problem.pid, 'start')
 
-    result = trainer.start_session(user, problem, sdb, remaining_time, message)
+    result = trainer.start_session(user, problem, sdb, remaining_time, message,
+                                   show_problem_rating=cfg.SHOW_PROBLEM_RATING)
     if result in ['solve', 'giveup', 'timeout']:
         rating_before = user.rating.rating
         hdb.add_action(user.name, problem.pid, result)
@@ -53,18 +53,16 @@ def start():
 
 def print_status():
     logger.debug('print_status() called')
-    config = Config()
     hdb = HistoryDB()
     pdb = ProblemDB()
-    user = get_current_user(config)
+    user = get_current_user(cfg)
     user.initialize(pdb, hdb)
     print(user)
 
 def print_history():
     logger.debug('print_history() called')
-    config = Config()
     hdb = HistoryDB()
-    user = get_current_user(config)
+    user = get_current_user(cfg)
     print(hdb.get_history(user.name))
 
 def reset():
