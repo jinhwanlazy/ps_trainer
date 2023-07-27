@@ -49,6 +49,7 @@ def start_session(user, problem, sdb, timeout=3600, message='', show_problem_rat
     prompt.append( 'Message      : {message}')
     prompt.append('\n[s]olved, [g]iveup, [q]uit\n')
     prompt = '\n'.join(prompt)
+
     while True:
         remaining_time = timeout - (time.time() - start_time)
         remaining_min = int(remaining_time) // 60
@@ -74,6 +75,12 @@ def start_session(user, problem, sdb, timeout=3600, message='', show_problem_rat
             logger.info('quited session. it will automatically resumed when you start new session')
             return 'quit'
         message = f'"{char}" is not valid input!'
-    logger.info('session timed out!')
-    return 'timeout'
+
+    if check_solved(user, problem, sdb):
+        logger.info('congrats you solved the problem!')
+        logger.debug('solved')
+        return 'solve'
+    else:
+        logger.info('session timed out!')
+        return 'timeout'
 
